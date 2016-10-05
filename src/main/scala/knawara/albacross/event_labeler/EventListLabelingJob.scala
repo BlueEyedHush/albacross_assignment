@@ -1,5 +1,6 @@
 package knawara.albacross.event_labeler
 
+import knawara.albacross.event_labeler.types.{EventList, CompanyIdToIpRangeMapping}
 import org.apache.spark.sql.SQLContext
 
 class EventListLabelingJob(private val eventList: EventList,

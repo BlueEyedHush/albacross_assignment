@@ -1,7 +1,7 @@
-package knawara.albacross.event_labeler
+package knawara.albacross.event_labeler.types
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.types.{ByteType, ArrayType}
+import org.apache.spark.sql.types.{ArrayType, ByteType}
 
 /**
   * This is container for DataFrame with valid schema
@@ -34,14 +34,9 @@ object EventList {
       case _ => throw new IpFieldIncorrectTypeException
     }
 
-    import com.google.common.io.BaseEncoding
-    /* it's anyval because for some reason SparkSQL uses tinyint instead of binary
-     * when it was Array[Byte] an exception was thrown */
-    val c: Seq[AnyVal] => String = ba =>  BaseEncoding.base32Hex().encode(ba.map(_.asInstanceOf[Byte]).toArray)
-    import org.apache.spark.sql.functions.udf
-    val converter = udf(c)
+    val dfWithIpTransformed =
+      TypesUtils.copyIpColumnAndConvertToString(dataFrame, ORIGINAL_IP_COLUMN_NAME, GENERATED_IP_COLUMN_NAME)
 
-    val dfWithIpTransformed = dataFrame.withColumn(GENERATED_IP_COLUMN_NAME, converter(dataFrame(ORIGINAL_IP_COLUMN_NAME)))
     new EventList(dfWithIpTransformed)
   }
 }

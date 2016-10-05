@@ -1,10 +1,11 @@
-package knawara.albacross.event_labeler
+package knawara.albacross.event_labeler.types
 
 import java.nio.ByteBuffer
 import java.util
 
+import knawara.albacross.event_labeler.TestUtils
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{SQLContext, RowFactory, Row, DataFrame}
+import org.apache.spark.sql.{DataFrame, Row, RowFactory, SQLContext}
 import org.scalatest.{FlatSpec, Matchers}
 
 class EventListTests extends FlatSpec with Matchers {
