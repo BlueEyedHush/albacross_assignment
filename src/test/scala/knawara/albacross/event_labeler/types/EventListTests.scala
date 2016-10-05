@@ -45,8 +45,6 @@ object EventListTests {
       rowList.add(RowFactory.create(byteArray))
     }
 
-    val schema = StructType(Seq(StructField("source_ip", ArrayType(ByteType, false), false)))
-
-    sqlContext.createDataFrame(rowList, schema)
+    sqlContext.createDataFrame(rowList, TestUtils.EVENTS_SCHEMA)
   }
 }

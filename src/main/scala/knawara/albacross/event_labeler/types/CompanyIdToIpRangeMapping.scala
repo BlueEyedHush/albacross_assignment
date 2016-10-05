@@ -9,6 +9,7 @@ import org.apache.spark.sql.DataFrame
 class CompanyIdToIpRangeMapping private (val df: DataFrame)
 
 object CompanyIdToIpRangeMapping {
+  val COMPANY_ID_NAME = "company_id"
   val RANGE_START_NAME = "ip_range_start"
   val TRANSFORMED_RANGE_START_NAME = "_ip_range_start"
   val RANGE_END_NAME = "ip_range_end"
