@@ -7,8 +7,8 @@ import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.scalatest.{FlatSpec, Matchers}
 
-class TypeUtilsTest extends FlatSpec with Matchers {
-  import TypesUtils._
+class IpProcessorTest extends FlatSpec with Matchers {
+  import IpProcessor._
   val sqlContext = TestUtils.getSqlContext()
 
   "convertIpAddress" should "properly format IPv6 address (1)" in {

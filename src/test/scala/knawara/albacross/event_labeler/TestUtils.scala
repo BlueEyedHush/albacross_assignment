@@ -2,14 +2,15 @@ package knawara.albacross.event_labeler
 
 import java.net.InetAddress
 
-import knawara.albacross.event_labeler.types.{CompanyIdToIpRangeMapping, EventList}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 
 object TestUtils {
-  import CompanyIdToIpRangeMapping._
-  import EventList._
+  val IP_COLUMN_NAME = "source_ip"
+  val COMPANY_ID_NAME = "company_id"
+  val RANGE_START_NAME = "ip_range_start"
+  val RANGE_END_NAME = "ip_range_end"
 
   val EVENTS_SCHEMA = StructType(Seq(StructField(IP_COLUMN_NAME, StringType, false)))
   val MAPPING_SCHEMA = StructType(Seq(

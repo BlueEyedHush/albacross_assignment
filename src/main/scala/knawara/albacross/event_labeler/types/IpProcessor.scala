@@ -4,7 +4,7 @@ import java.net.{Inet4Address, Inet6Address, InetAddress}
 
 import org.apache.spark.sql.DataFrame
 
-object TypesUtils {
+object IpProcessor {
   def convertIpAddress(ip: String) = {
     InetAddress.getByName(ip) match {
       case ipv4: Inet4Address => throw new IPv4NotSupported

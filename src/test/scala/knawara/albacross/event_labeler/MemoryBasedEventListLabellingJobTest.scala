@@ -2,7 +2,7 @@ package knawara.albacross.event_labeler
 
 import java.util
 
-import knawara.albacross.event_labeler.types.{TypesUtils, CompanyIdToIpRangeMapping, EventList}
+import knawara.albacross.event_labeler.types.IpProcessor
 import org.apache.spark.sql.{DataFrame, Row, RowFactory, SQLContext}
 import org.scalatest._
 
@@ -18,11 +18,9 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
     val ips = Seq("1::5", "3::3", "5::5")
     val ranges = Seq(("1::0", "2::0"), ("3::0", "4::0"), ("5::0", "6::0"))
 
-    val el = createEventList(sqlContext, ips)
-    val m = createMapping(sqlContext, ranges)
-    val job = new EventListLabelingJob(el, m)
-
-    val result = job.run(sqlContext)
+    val el = createEventsDataset(sqlContext, ips)
+    val m = createMappingDataset(sqlContext, ranges)
+    val result = EventListLabelingJob(el, m).run(sqlContext)
 
     val expected = expandIps(ips).zipWithIndex.toSet
     dfToCompanyIdSet(result) should be (expected)
@@ -30,15 +28,16 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
 }
 
 object MemoryBasedEventListLabellingJobTest {
+  import TestUtils._
 
-  private def createEventList(sc: SQLContext, ips: Seq[String]): EventList = {
+  private def createEventsDataset(sc: SQLContext, ips: Seq[String]): EventsDataset = {
     val rowList = new util.ArrayList[Row](4)
     ips.foreach(ip => rowList.add(RowFactory.create(ip)))
     val df = sc.createDataFrame(rowList, TestUtils.EVENTS_SCHEMA)
-    EventList(df)
+    new EventsDataset(df, IP_COLUMN_NAME, "0")
   }
 
-  private def createMapping(sc: SQLContext, ranges: Seq[(String, String)]): CompanyIdToIpRangeMapping = {
+  private def createMappingDataset(sc: SQLContext, ranges: Seq[(String, String)]): MappingDataset = {
     val rowList = new util.ArrayList[Row](ranges.size)
 
     for(i <- 0 until ranges.size) {
@@ -47,17 +46,17 @@ object MemoryBasedEventListLabellingJobTest {
       rowList.add(Row.fromTuple(rowTuple))
     }
 
-    val df = sc.createDataFrame(rowList, TestUtils.MAPPING_SCHEMA)
-    CompanyIdToIpRangeMapping(df)
+    val df = sc.createDataFrame(rowList, MAPPING_SCHEMA)
+    new MappingDataset(df, RANGE_START_NAME, RANGE_END_NAME)
   }
 
   private def dfToCompanyIdSet(df: DataFrame): Set[(String, Int)] = {
     df.collect().map(r => {
-      val companyId = r.getAs[Long](CompanyIdToIpRangeMapping.COMPANY_ID_NAME).toInt
-      val sourceIp = r.getAs[String](EventList.IP_COLUMN_NAME)
+      val companyId = r.getAs[Long](COMPANY_ID_NAME).toInt
+      val sourceIp = r.getAs[String](IP_COLUMN_NAME)
       (sourceIp, companyId)
     }).toSet
   }
 
-  private def expandIps(ips: Seq[String]): Seq[String] = ips.map(TypesUtils.convertIpAddress)
+  private def expandIps(ips: Seq[String]): Seq[String] = ips.map(IpProcessor.convertIpAddress)
 }
