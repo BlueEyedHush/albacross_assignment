@@ -5,32 +5,29 @@ import org.apache.spark
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.{Row, Encoders, DataFrame, SQLContext}
 
-class EventsDataset(var df: DataFrame, val ip: String)
-class MappingDataset(var df: DataFrame, val company_id: String, val priority: String, val ipRangeStart: String, val ipRangeEnd: String)
+class EventsDataset(var df: DataFrame,
+                    val ip: String)
+class MappingDataset(var df: DataFrame,
+                     val company_id: String,
+                     val priority: String,
+                     val ipRangeStart: String,
+                     val ipRangeEnd: String)
 
-class EventListLabelingJob private(val events: EventsDataset, val ranges: MappingDataset) {
+class EventLabeler private(val events: EventsDataset, val ranges: MappingDataset) {
   def run(sqlContext: SQLContext): DataFrame = {
-    val eventTable = "events"
-    val rangesTable = "ranges"
-
-    val srcIp = s"$eventTable.${events.ip}"
-    val rangeStart = s"$rangesTable.${ranges.ipRangeStart}"
-    val rangeEnd = s"$rangesTable.${ranges.ipRangeEnd}"
-
-    events.df.registerTempTable(eventTable)
-    ranges.df.registerTempTable(rangesTable)
-
     import sqlContext.implicits._
     val resultSchema = events.df.schema.add(ranges.df.schema(ranges.company_id))
     implicit val resultEncoder = RowEncoder(resultSchema)
 
-    val keyExtractor = SerializableFunctions.createKeyExtractor(events.ip)
-    val reducer = SerializableFunctions.createReducer(ranges.priority)
-    val df = sqlContext.sql(s"SELECT * FROM " +
-      s"$eventTable LEFT OUTER JOIN $rangesTable ON $srcIp >= $rangeStart AND $srcIp <= $rangeEnd ")
+    val keyExtractor = TransformationProducers.createKeyExtractor(events.ip)
+    val reducer = TransformationProducers.createReducer(ranges.priority)
+    val valueExtractor = TransformationProducers.createValueExtractor()
+
+    val df = events.df
+      .join(ranges.df, events.df(events.ip).between(ranges.df(ranges.ipRangeStart), ranges.df(ranges.ipRangeEnd)))
       .groupByKey(keyExtractor)
       .reduceGroups(reducer)
-      .map { case (k, row) => row }
+      .map(valueExtractor)
 
     df.show(false)
 
@@ -38,7 +35,11 @@ class EventListLabelingJob private(val events: EventsDataset, val ranges: Mappin
   }
 }
 
-object SerializableFunctions {
+/**
+  * Functions used as argument to Dataset operations are implemented here
+  * so that during serialization Spark doesn't need to serialize whole EventLabeler
+  */
+object TransformationProducers {
   def createKeyExtractor(ipColumnName: String): Row => String =
     r => r.getAs[String](ipColumnName)
 
@@ -50,20 +51,22 @@ object SerializableFunctions {
 
       if (p1 < p2) r1 else r2
     }
+
+  def createValueExtractor(): ((String, Row)) => Row = { case (k, row) => row }
 }
 
-object EventListLabelingJob {
+object EventLabeler {
   /**
     * Both datasets (events & ranges) must contain String columns holding IP addresses in IPv6 format
     * (not necessarily fully expanded)
     * They are stored in columns which names are also provided inside events & ranges objects
     *
-    * This function validates them, processes to suitable format and returns EventListLabelingJob
+    * This function validates them, processes to suitable format and returns EventLabeler
     */
-  def apply(events: EventsDataset, ranges: MappingDataset): EventListLabelingJob = {
+  def apply(events: EventsDataset, ranges: MappingDataset): EventLabeler = {
     processRanges(ranges)
     processEvents(events)
-    new EventListLabelingJob(events, ranges)
+    new EventLabeler(events, ranges)
   }
 
   private def processRanges(ranges: MappingDataset): Unit = {

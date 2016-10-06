@@ -20,7 +20,7 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
 
     val el = createEventsDataset(sqlContext, ips)
     val m = createMappingDataset(sqlContext, ranges)
-    val result = EventListLabelingJob(el, m).run(sqlContext)
+    val result = EventLabeler(el, m).run(sqlContext)
 
     val expected = expandIps(ips).zipWithIndex.toSet
     dfToCompanyIdSet(result) should be (expected)
@@ -32,7 +32,7 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
 
     val el = createEventsDataset(sqlContext, ips)
     val m = createMappingDataset(sqlContext, ranges)
-    val result = EventListLabelingJob(el, m).run(sqlContext)
+    val result = EventLabeler(el, m).run(sqlContext)
 
     val expected = expandIps(ips).zip(Seq(0, 0)).toSet
     dfToCompanyIdSet(result) should be (expected)
