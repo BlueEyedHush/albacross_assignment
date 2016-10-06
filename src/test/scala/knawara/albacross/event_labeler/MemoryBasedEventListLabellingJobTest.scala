@@ -14,27 +14,44 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
 
   val sqlContext = TestUtils.getSqlContext()
 
-  "EventListLabellingJob" should "return correctly mapped dataset in non-overlapping case" in {
+  "EventLabeler" should "correctly label events in non-overlapping case" in {
     val ips = Seq("1::5", "3::3", "5::5")
     val ranges = Seq((1L, "1::0", "2::0"), (2L, "3::0", "4::0"), (3L, "5::0", "6::0"))
+    val expected = Seq(0, 1, 2)
 
-    val el = createEventsDataset(sqlContext, ips)
-    val m = createMappingDataset(sqlContext, ranges)
-    val result = EventLabeler(el, m).run(sqlContext)
-
-    val expected = expandIps(ips).zipWithIndex.toSet
-    dfToCompanyIdSet(result) should be (expected)
+    test(ips, ranges, expected)
   }
 
-  "EventListLabellingJob" should "return correcly mapped dataset in simple overlapping case" in {
+  "EventLabeler" should "correctly label events in simple overlapping case (simple)" in {
     val ips = Seq("1::5", "3::3")
     val ranges = Seq((1L, "1::0", "5::0"), (2L, "1::0", "5::0"))
+    val expected = Seq(0, 0)
 
+    test(ips, ranges, expected)
+  }
+
+  "EventLabeler" should "correctly label events in simple overlapping case (complex)" in {
+    val ips = Seq("1::5", "2::2", "3::3", "::6:0:1", "::6:4:5", "::6:7:0")
+    val ranges = Seq((2L, "1::0", "3::0"), (1L, "2::0", "4::0"), (4L, "::6:0:0", "::7:0:0"), (3L, "::6:4:0", "::6:5:0"))
+    val expected = Seq(0, 1, 1, 2, 3, 2)
+
+    test(ips, ranges, expected)
+  }
+
+  "EventLabeler" should "correctly label events in case of single-point overlapping ranges" in {
+    val ips = Seq("::2", "::3")
+    val ranges = Seq((2L, "::0", "::2"), (3L, "::2", "::3"), (1L, "::3", "::4"))
+    val expected = Seq(0, 2)
+
+    test(ips, ranges, expected)
+  }
+
+  private def test(ips: Seq[String], ranges: Seq[(Long, String,String)], expectedCompanyIds: Seq[Int]) = {
     val el = createEventsDataset(sqlContext, ips)
     val m = createMappingDataset(sqlContext, ranges)
     val result = EventLabeler(el, m).run(sqlContext)
 
-    val expected = expandIps(ips).zip(Seq(0, 0)).toSet
+    val expected = expandIps(ips).zip(expectedCompanyIds).toSet
     dfToCompanyIdSet(result) should be (expected)
   }
 }
