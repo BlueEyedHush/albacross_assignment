@@ -2,7 +2,7 @@ package knawara.albacross.event_labeler
 
 import java.util
 
-import knawara.albacross.event_labeler.types.{CompanyIdToIpRangeMapping, EventList}
+import knawara.albacross.event_labeler.types.{TypesUtils, CompanyIdToIpRangeMapping, EventList}
 import org.apache.spark.sql.{DataFrame, Row, RowFactory, SQLContext}
 import org.scalatest._
 
@@ -24,8 +24,8 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
 
     val result = job.run(sqlContext)
 
-    /* TODO: ignore order */
-    dfToCompanyIdSeq(result) should be (Seq(0,1,2))
+    val expected = expandIps(ips).zipWithIndex.toSet
+    dfToCompanyIdSet(result) should be (expected)
   }
 }
 
@@ -51,7 +51,13 @@ object MemoryBasedEventListLabellingJobTest {
     CompanyIdToIpRangeMapping(df)
   }
 
-  private def dfToCompanyIdSeq(df: DataFrame): Seq[Long] = {
-    df.collect().map(_.getAs[Long](CompanyIdToIpRangeMapping.COMPANY_ID_NAME))
+  private def dfToCompanyIdSet(df: DataFrame): Set[(String, Int)] = {
+    df.collect().map(r => {
+      val companyId = r.getAs[Long](CompanyIdToIpRangeMapping.COMPANY_ID_NAME).toInt
+      val sourceIp = r.getAs[String](EventList.IP_COLUMN_NAME)
+      (sourceIp, companyId)
+    }).toSet
   }
+
+  private def expandIps(ips: Seq[String]): Seq[String] = ips.map(TypesUtils.convertIpAddress)
 }
