@@ -11,9 +11,7 @@ class CompanyIdToIpRangeMapping private (val df: DataFrame)
 object CompanyIdToIpRangeMapping {
   val COMPANY_ID_NAME = "company_id"
   val RANGE_START_NAME = "ip_range_start"
-  val TRANSFORMED_RANGE_START_NAME = "_ip_range_start"
   val RANGE_END_NAME = "ip_range_end"
-  val TRANSFORMED_RANGE_END_NAME = "_ip_range_end"
 
   /**
     * Verifies if the schema of provided DataFrame conforms to the format
@@ -21,10 +19,8 @@ object CompanyIdToIpRangeMapping {
     * Range includes ip_range_end
     */
   def apply(inDf: DataFrame): CompanyIdToIpRangeMapping = {
-    val startTransformed =
-      TypesUtils.copyIpColumnAndConvertToString(inDf, RANGE_START_NAME, TRANSFORMED_RANGE_START_NAME)
-    val bothTransformed =
-      TypesUtils.copyIpColumnAndConvertToString(startTransformed, RANGE_END_NAME, TRANSFORMED_RANGE_END_NAME)
+    val startTransformed = TypesUtils.addIpFormattingStep(inDf, RANGE_START_NAME)
+    val bothTransformed = TypesUtils.addIpFormattingStep(startTransformed, RANGE_END_NAME)
 
     new CompanyIdToIpRangeMapping(bothTransformed)
   }

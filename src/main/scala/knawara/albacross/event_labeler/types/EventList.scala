@@ -1,18 +1,17 @@
 package knawara.albacross.event_labeler.types
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.types.{ArrayType, ByteType}
+import org.apache.spark.sql.types.StringType
 
 /**
   * This is container for DataFrame with valid schema
   * Validation is performed in companion object
-  * df must have source_ip, which is a meaningless string which preserves ordering of IP's stored as byte arrays
+  * df must have source_ip, which represents IPv6, with all components and all leading 0s inside component
   */
 class EventList private (val df: DataFrame)
 
 object EventList {
-  val ORIGINAL_IP_COLUMN_NAME = "source_ip"
-  val GENERATED_IP_COLUMN_NAME = "_converted_source_ip"
+  val IP_COLUMN_NAME = "source_ip"
 
   /**
     * Performs validation and, if provided DataFrame has expected schema, returns EventList
@@ -22,20 +21,16 @@ object EventList {
     * Also transforms IP field to string
     */
   def apply(dataFrame: DataFrame): EventList = {
-    val ipField = dataFrame.schema(ORIGINAL_IP_COLUMN_NAME)
+    val ipField = dataFrame.schema(IP_COLUMN_NAME)
 
     if(ipField == null) throw new MissingIpFieldException
     if(ipField.nullable) throw new MissingIpFieldException
     ipField.dataType match {
-      case arrType : ArrayType => arrType.elementType match {
-        case _ : ByteType => "valid"
-        case _ => throw new IpFieldIncorrectTypeException
-      }
+      case arrType : StringType => "valid"
       case _ => throw new IpFieldIncorrectTypeException
     }
 
-    val dfWithIpTransformed =
-      TypesUtils.copyIpColumnAndConvertToString(dataFrame, ORIGINAL_IP_COLUMN_NAME, GENERATED_IP_COLUMN_NAME)
+    val dfWithIpTransformed = TypesUtils.addIpFormattingStep(dataFrame, IP_COLUMN_NAME)
 
     new EventList(dfWithIpTransformed)
   }

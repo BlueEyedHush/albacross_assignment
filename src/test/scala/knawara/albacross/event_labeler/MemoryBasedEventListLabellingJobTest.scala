@@ -1,11 +1,9 @@
 package knawara.albacross.event_labeler
 
-import java.net.InetAddress
 import java.util
 
 import knawara.albacross.event_labeler.types.{CompanyIdToIpRangeMapping, EventList}
-import org.apache.spark.sql.{SQLContext, RowFactory, Row, DataFrame}
-import org.apache.zookeeper.ZooDefs.Ids
+import org.apache.spark.sql.{DataFrame, Row, RowFactory, SQLContext}
 import org.scalatest._
 
 /**
@@ -27,16 +25,15 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
     val result = job.run(sqlContext)
 
     /* TODO: ignore order */
-    dfToCompanyIdSeq(result) should be (Seq(1,2,3))
+    dfToCompanyIdSeq(result) should be (Seq(0,1,2))
   }
 }
 
 object MemoryBasedEventListLabellingJobTest {
-  import TestUtils._
 
   private def createEventList(sc: SQLContext, ips: Seq[String]): EventList = {
     val rowList = new util.ArrayList[Row](4)
-    ips.foreach(ip => rowList.add(RowFactory.create(ipToByteArray(ip))))
+    ips.foreach(ip => rowList.add(RowFactory.create(ip)))
     val df = sc.createDataFrame(rowList, TestUtils.EVENTS_SCHEMA)
     EventList(df)
   }
@@ -44,9 +41,9 @@ object MemoryBasedEventListLabellingJobTest {
   private def createMapping(sc: SQLContext, ranges: Seq[(String, String)]): CompanyIdToIpRangeMapping = {
     val rowList = new util.ArrayList[Row](ranges.size)
 
-    for(i <- 1 until ranges.size) {
+    for(i <- 0 until ranges.size) {
       val (start, end) = ranges(i)
-      val rowTuple = (i.asInstanceOf[Long], ipToByteArray(start), ipToByteArray(end))
+      val rowTuple = (i.asInstanceOf[Long], start, end)
       rowList.add(Row.fromTuple(rowTuple))
     }
 

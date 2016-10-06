@@ -1,18 +1,33 @@
 package knawara.albacross.event_labeler.types
 
+import java.net.{Inet4Address, Inet6Address, InetAddress}
+
 import org.apache.spark.sql.DataFrame
 
 object TypesUtils {
-  def copyIpColumnAndConvertToString(df: DataFrame, sourceColumnName: String, targetColumnName: String) = {
-    import com.google.common.io.BaseEncoding
-    /* it's anyval because for some reason SparkSQL uses tinyint instead of binary
-     * when it was Array[Byte] an exception was thrown */
-    val c: Seq[AnyVal] => String =
-      ba =>  BaseEncoding.base32Hex().encode(ba.map(_.asInstanceOf[Byte]).toArray)
+  def convertIpAddress(ip: String) = {
+    InetAddress.getByName(ip) match {
+      case ipv4: Inet4Address => throw new IPv4NotSupported
+      case ipv6: Inet6Address => ipv6.getHostAddress.split(":").iterator.map(leftPad(_, 4, '0')).mkString(":")
+    }
+  }
 
+  def addIpFormattingStep(df: DataFrame, columnName: String): DataFrame = {
     import org.apache.spark.sql.functions.udf
-    val converter = udf(c)
+    val converter = udf(convertIpAddress _)
 
-    df.withColumn(targetColumnName, converter(df(sourceColumnName)))
+    df.withColumn(columnName, converter(df(columnName)))
+  }
+
+  private def leftPad(str: String, desiredLength: Int, paddingChar: Char): String = {
+    if(str.length >= desiredLength) str
+    else {
+      val b = new StringBuilder
+      for(i <- 1 to (desiredLength - str.length)) b.append(paddingChar)
+      b.append(str)
+      b.toString
+    }
   }
 }
+
+sealed class IPv4NotSupported extends RuntimeException
