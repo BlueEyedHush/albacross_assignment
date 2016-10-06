@@ -1,4 +1,4 @@
-val sparkVersion = "1.6.1"
+val sparkVersion = "2.0.0"
 
 lazy val prj = (project in file(".")).
   settings(

@@ -1,6 +1,7 @@
 package knawara.albacross.event_labeler
 
 import java.net.InetAddress
+import java.util.concurrent.locks.ReentrantLock
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.types._
@@ -19,13 +20,24 @@ object TestUtils {
     StructField(RANGE_END_NAME, StringType, false)
   ))
 
+  private val contextLock = new ReentrantLock()
+  private var context: SQLContext = null
   def getSqlContext(): SQLContext = {
-    val sparkConf = new SparkConf()
-      .setMaster("local[*]")
-      .setAppName("event_labeler_test")
-      .set("spark.driver.allowMultipleContexts", "true")
-    val sparkContext = new SparkContext(sparkConf)
-    new SQLContext(sparkContext)
+    contextLock.lock()
+
+    try {
+      if(context == null) {
+        val sparkConf = new SparkConf()
+          .setMaster("local[*]")
+          .setAppName("event_labeler_test")
+        val sparkContext = new SparkContext(sparkConf)
+        context = new SQLContext(sparkContext)
+      }
+
+      context
+    } finally {
+      contextLock.unlock()
+    }
   }
 
   def toBitString(b: Byte) = {
