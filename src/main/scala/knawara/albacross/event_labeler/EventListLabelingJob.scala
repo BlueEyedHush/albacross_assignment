@@ -1,12 +1,14 @@
 package knawara.albacross.event_labeler
 
 import knawara.albacross.event_labeler.types.IpProcessor
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.{Row, Encoders, DataFrame, SQLContext}
 
-class EventsDataset(var df: DataFrame, val ip: String, val priority: String)
-class MappingDataset(var df: DataFrame, val ipRangeStart: String, val ipRangeEnd: String)
+class EventsDataset(var df: DataFrame, val ip: String)
+class MappingDataset(var df: DataFrame, val company_id: String, val priority: String, val ipRangeStart: String, val ipRangeEnd: String)
 
-class EventListLabelingJob private (val events: EventsDataset, val ranges: MappingDataset) {
+class EventListLabelingJob private(val events: EventsDataset, val ranges: MappingDataset) {
   def run(sqlContext: SQLContext): DataFrame = {
     val eventTable = "events"
     val rangesTable = "ranges"
@@ -18,13 +20,36 @@ class EventListLabelingJob private (val events: EventsDataset, val ranges: Mappi
     events.df.registerTempTable(eventTable)
     ranges.df.registerTempTable(rangesTable)
 
+    import sqlContext.implicits._
+    val resultSchema = events.df.schema.add(ranges.df.schema(ranges.company_id))
+    implicit val resultEncoder = RowEncoder(resultSchema)
+
+    val keyExtractor = SerializableFunctions.createKeyExtractor(events.ip)
+    val reducer = SerializableFunctions.createReducer(ranges.priority)
     val df = sqlContext.sql(s"SELECT * FROM " +
       s"$eventTable LEFT OUTER JOIN $rangesTable ON $srcIp >= $rangeStart AND $srcIp <= $rangeEnd ")
+      .groupByKey(keyExtractor)
+      .reduceGroups(reducer)
+      .map { case (k, row) => row }
 
     df.show(false)
 
     df
   }
+}
+
+object SerializableFunctions {
+  def createKeyExtractor(ipColumnName: String): Row => String =
+    r => r.getAs[String](ipColumnName)
+
+
+  def createReducer(priorityColumnName: String): (Row, Row) => Row =
+    (r1, r2) => {
+      val p1 = r1.getAs[Long](priorityColumnName)
+      val p2 = r2.getAs[Long](priorityColumnName)
+
+      if (p1 < p2) r1 else r2
+    }
 }
 
 object EventListLabelingJob {

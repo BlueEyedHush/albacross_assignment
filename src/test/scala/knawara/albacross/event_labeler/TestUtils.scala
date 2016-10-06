@@ -10,12 +10,14 @@ import org.apache.spark.{SparkConf, SparkContext}
 object TestUtils {
   val IP_COLUMN_NAME = "source_ip"
   val COMPANY_ID_NAME = "company_id"
+  val COMPANY_PRIORITY_NAME = "company_priority"
   val RANGE_START_NAME = "ip_range_start"
   val RANGE_END_NAME = "ip_range_end"
 
   val EVENTS_SCHEMA = StructType(Seq(StructField(IP_COLUMN_NAME, StringType, false)))
   val MAPPING_SCHEMA = StructType(Seq(
     StructField(COMPANY_ID_NAME, LongType, false),
+    StructField(COMPANY_PRIORITY_NAME, LongType, false),
     StructField(RANGE_START_NAME, StringType, false),
     StructField(RANGE_END_NAME, StringType, false)
   ))

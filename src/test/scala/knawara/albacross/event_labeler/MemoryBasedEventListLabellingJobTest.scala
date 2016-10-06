@@ -16,13 +16,25 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
 
   "EventListLabellingJob" should "return correctly mapped dataset in non-overlapping case" in {
     val ips = Seq("1::5", "3::3", "5::5")
-    val ranges = Seq(("1::0", "2::0"), ("3::0", "4::0"), ("5::0", "6::0"))
+    val ranges = Seq((1L, "1::0", "2::0"), (2L, "3::0", "4::0"), (3L, "5::0", "6::0"))
 
     val el = createEventsDataset(sqlContext, ips)
     val m = createMappingDataset(sqlContext, ranges)
     val result = EventListLabelingJob(el, m).run(sqlContext)
 
     val expected = expandIps(ips).zipWithIndex.toSet
+    dfToCompanyIdSet(result) should be (expected)
+  }
+
+  "EventListLabellingJob" should "return correcly mapped dataset in simple overlapping case" in {
+    val ips = Seq("1::5", "3::3")
+    val ranges = Seq((1L, "1::0", "5::0"), (2L, "1::0", "5::0"))
+
+    val el = createEventsDataset(sqlContext, ips)
+    val m = createMappingDataset(sqlContext, ranges)
+    val result = EventListLabelingJob(el, m).run(sqlContext)
+
+    val expected = expandIps(ips).zip(Seq(0, 0)).toSet
     dfToCompanyIdSet(result) should be (expected)
   }
 }
@@ -34,20 +46,20 @@ object MemoryBasedEventListLabellingJobTest {
     val rowList = new util.ArrayList[Row](4)
     ips.foreach(ip => rowList.add(RowFactory.create(ip)))
     val df = sc.createDataFrame(rowList, TestUtils.EVENTS_SCHEMA)
-    new EventsDataset(df, IP_COLUMN_NAME, "0")
+    new EventsDataset(df, IP_COLUMN_NAME)
   }
 
-  private def createMappingDataset(sc: SQLContext, ranges: Seq[(String, String)]): MappingDataset = {
+  private def createMappingDataset(sc: SQLContext, ranges: Seq[(Long, String, String)]): MappingDataset = {
     val rowList = new util.ArrayList[Row](ranges.size)
 
-    for(i <- 0 until ranges.size) {
-      val (start, end) = ranges(i)
-      val rowTuple = (i.asInstanceOf[Long], start, end)
+    for(i <- ranges.indices) {
+      val (priority, start, end) = ranges(i)
+      val rowTuple = (i.asInstanceOf[Long], priority, start, end)
       rowList.add(Row.fromTuple(rowTuple))
     }
 
     val df = sc.createDataFrame(rowList, MAPPING_SCHEMA)
-    new MappingDataset(df, RANGE_START_NAME, RANGE_END_NAME)
+    new MappingDataset(df, COMPANY_ID_NAME, COMPANY_PRIORITY_NAME, RANGE_START_NAME, RANGE_END_NAME)
   }
 
   private def dfToCompanyIdSet(df: DataFrame): Set[(String, Int)] = {
