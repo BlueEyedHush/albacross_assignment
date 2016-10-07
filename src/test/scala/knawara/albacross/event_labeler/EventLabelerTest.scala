@@ -9,8 +9,8 @@ import org.scalatest._
 /**
   * Test of EventListLabellingJob which uses memory-backed dataframes as input
   */
-class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
-  import MemoryBasedEventListLabellingJobTest._
+class EventLabelerTest extends FlatSpec with Matchers {
+  import EventLabelerTest._
 
   val sqlContext = TestUtils.getSqlContext()
 
@@ -22,7 +22,7 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
     test(ips, ranges, expected)
   }
 
-  "EventLabeler" should "correctly label events in simple overlapping case (simple)" in {
+  it should "correctly label events in simple overlapping case" in {
     val ips = Seq("1::5", "3::3")
     val ranges = Seq((1L, "1::0", "5::0"), (2L, "1::0", "5::0"))
     val expected = Seq(0, 0)
@@ -30,7 +30,7 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
     test(ips, ranges, expected)
   }
 
-  "EventLabeler" should "correctly label events in simple overlapping case (complex)" in {
+  it should "correctly label events in complex overlapping case" in {
     val ips = Seq("1::5", "2::2", "3::3", "::6:0:1", "::6:4:5", "::6:7:0")
     val ranges = Seq((2L, "1::0", "3::0"), (1L, "2::0", "4::0"), (4L, "::6:0:0", "::7:0:0"), (3L, "::6:4:0", "::6:5:0"))
     val expected = Seq(0, 1, 1, 2, 3, 2)
@@ -38,7 +38,7 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
     test(ips, ranges, expected)
   }
 
-  "EventLabeler" should "correctly label events in case of single-point overlapping ranges" in {
+  it should "correctly label events in case of single-point overlapping ranges" in {
     val ips = Seq("::2", "::3")
     val ranges = Seq((2L, "::0", "::2"), (3L, "::2", "::3"), (1L, "::3", "::4"))
     val expected = Seq(0, 2)
@@ -56,7 +56,7 @@ class MemoryBasedEventListLabellingJobTest extends FlatSpec with Matchers {
   }
 }
 
-object MemoryBasedEventListLabellingJobTest {
+object EventLabelerTest {
   import TestUtils._
 
   private def createEventsDataset(sc: SQLContext, ips: Seq[String]): EventsDataset = {

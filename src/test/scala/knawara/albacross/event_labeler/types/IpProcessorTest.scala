@@ -15,7 +15,7 @@ class IpProcessorTest extends FlatSpec with Matchers {
     convertIpAddress("::1") should be ("0000:0000:0000:0000:0000:0000:0000:0001")
   }
 
-  "convertIpAddress" should "properly format IPv6 address (2)" in {
+  it should "properly format IPv6 address (2)" in {
     convertIpAddress("5::5") should be ("0005:0000:0000:0000:0000:0000:0000:0005")
   }
 
