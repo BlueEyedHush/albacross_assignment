@@ -45,16 +45,4 @@ object TestUtils {
       contextLock.unlock()
     }
   }
-
-  def toBitString(b: Byte) = {
-    val builder = new StringBuilder
-    var byteTmp = b.asInstanceOf[Int]
-    for(i <- 0 until 8) {
-      builder.append(if((byteTmp & 0x80) > 0) 1 else 0)
-      byteTmp = byteTmp << 1
-    }
-    builder.toString()
-  }
-
-  def ipToByteArray(ip: String) = InetAddress.getByName(ip).getAddress
 }
