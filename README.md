@@ -16,9 +16,9 @@ Number of companies theoretically also can be unlimited (number of addresses is 
 I can think of at least one way how it can be done - using SparkSQL. I'd have to be tested whether it's optimal and scalable enough - if it is there is no reason to go with more complex solution.
 
 #### Using SparkSQL:
-1. Join events with ranges using START <= EVENT_IP << END.
+1. Perform left outer join of events with ranges using condition START <= EVENT_IP <= END.
 2. Group by IP address
-3. Reduce each group by one with smallest range
+3. Reduce each group by choosing in each reduction step row with lower priority
 
 ## SPARK + CASSANDRA SOLUTION, more complex
 

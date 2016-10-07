@@ -1,9 +1,8 @@
 package knawara.albacross.event_labeler
 
 import knawara.albacross.event_labeler.types.IpProcessor
-import org.apache.spark
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.{Row, Encoders, DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 class EventsDataset(var df: DataFrame,
                     val ip: String)
@@ -29,7 +28,7 @@ class EventLabeler private(val events: EventsDataset, val ranges: MappingDataset
       .reduceGroups(reducer)
       .map(valueExtractor)
 
-    df.show(false)
+    // df.show(false)
 
     df
   }

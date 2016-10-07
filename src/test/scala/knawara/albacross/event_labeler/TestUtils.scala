@@ -3,6 +3,7 @@ package knawara.albacross.event_labeler
 import java.net.InetAddress
 import java.util.concurrent.locks.ReentrantLock
 
+import org.apache.log4j.Logger
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
@@ -29,6 +30,9 @@ object TestUtils {
 
     try {
       if(context == null) {
+        import org.apache.log4j.Level
+        Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+
         val sparkConf = new SparkConf()
           .setMaster("local[*]")
           .setAppName("event_labeler_test")

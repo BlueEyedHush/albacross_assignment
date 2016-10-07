@@ -10,7 +10,6 @@ lazy val prj = (project in file(".")).
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-core" % sparkVersion,
       "org.apache.spark" %% "spark-sql" % sparkVersion,
-      "com.google.guava" % "guava" % "19.0",
       "org.scalatest" %% "scalatest" % "3.0.0" % "test"
     )
   )
