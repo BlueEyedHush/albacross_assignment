@@ -1,6 +1,5 @@
 package knawara.albacross.event_labeler
 
-import knawara.albacross.event_labeler.types.IpProcessor
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
@@ -22,15 +21,11 @@ class EventLabeler private(val events: EventsDataset, val ranges: MappingDataset
     val reducer = TransformationProducers.createReducer(ranges.priority)
     val valueExtractor = TransformationProducers.createValueExtractor()
 
-    val df = events.df
+    events.df
       .join(ranges.df, events.df(events.ip).between(ranges.df(ranges.ipRangeStart), ranges.df(ranges.ipRangeEnd)))
       .groupByKey(keyExtractor)
       .reduceGroups(reducer)
       .map(valueExtractor)
-
-    // df.show(false)
-
-    df
   }
 }
 

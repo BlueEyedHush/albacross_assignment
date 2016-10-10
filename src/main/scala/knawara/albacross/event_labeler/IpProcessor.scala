@@ -1,4 +1,4 @@
-package knawara.albacross.event_labeler.types
+package knawara.albacross.event_labeler
 
 import java.net.{Inet4Address, Inet6Address, InetAddress}
 

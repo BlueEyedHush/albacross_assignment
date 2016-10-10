@@ -1,8 +1,7 @@
-package knawara.albacross.event_labeler.types
+package knawara.albacross.event_labeler
 
 import java.util
 
-import knawara.albacross.event_labeler.TestUtils
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.scalatest.{FlatSpec, Matchers}

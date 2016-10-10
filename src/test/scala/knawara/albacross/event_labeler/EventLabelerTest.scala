@@ -2,7 +2,6 @@ package knawara.albacross.event_labeler
 
 import java.util
 
-import knawara.albacross.event_labeler.types.IpProcessor
 import org.apache.spark.sql.{DataFrame, Row, RowFactory, SQLContext}
 import org.scalatest._
 
